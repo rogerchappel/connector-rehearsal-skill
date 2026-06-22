@@ -1,0 +1,9 @@
+connector: crm
+action: update_contact
+target: contact:example-123
+approval_required: true
+risk_level: medium
+rollback_note: Restore the previous contact fields from the attached before snapshot.
+evidence:
+  - fixtures/before.json
+  - fixtures/after.json
