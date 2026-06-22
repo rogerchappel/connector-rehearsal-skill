@@ -1,0 +1,14 @@
+{
+  "connector": "github",
+  "action": "create_issue_comment",
+  "target": "rogerchappel/example-repo#42",
+  "payload": {
+    "body": "Local dry-run approval packet is ready."
+  },
+  "approval_required": true,
+  "risk_level": "low",
+  "rollback_note": "Delete the comment if it was posted to the wrong issue.",
+  "evidence": [
+    "docs/ORCHESTRATION.md"
+  ]
+}
