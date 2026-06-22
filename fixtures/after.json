@@ -1,0 +1,8 @@
+{
+  "contact": {
+    "id": "example-123",
+    "status": "qualified",
+    "owner": "sales-a",
+    "last_touch": "2026-06-22"
+  }
+}
