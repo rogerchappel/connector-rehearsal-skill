@@ -53,9 +53,18 @@ This project never calls external services and never stores credentials. It flag
 ## Verification
 
 ```bash
-npm test
-npm run check
-npm run build
-npm run smoke
-bash scripts/validate.sh
+npm run release:check
 ```
+
+The release check runs:
+
+```bash
+npm run check
+npm test
+npm run smoke
+npm run package:smoke
+```
+
+`package:smoke` builds the TypeScript output and runs `npm pack --dry-run` so
+reviewers can confirm the CLI, fixtures, docs, changelog, README, and license are
+included before a release.
