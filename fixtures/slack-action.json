@@ -1,0 +1,15 @@
+{
+  "connector": "slack",
+  "action": "post_message",
+  "target": "#release-review",
+  "payload": {
+    "text": "Release candidate is ready for human review.",
+    "thread_key": "local-rehearsal-only"
+  },
+  "approval_required": true,
+  "rollback_note": "Do not post until approved; if posted in error, delete the message and add a correction note.",
+  "evidence": [
+    "docs/RELEASE_CANDIDATE.md",
+    "tmp/rehearsal/approval.md"
+  ]
+}
