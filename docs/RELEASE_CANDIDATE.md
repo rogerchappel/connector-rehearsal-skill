@@ -19,3 +19,13 @@ Initial public build with:
 - `npm run build`
 - `npm run smoke`
 - `bash scripts/validate.sh`
+
+## Verification Results
+
+Recorded on 2026-06-22:
+
+- `npm test`: pass, 4 tests.
+- `npm run check`: pass.
+- `npm run build`: pass.
+- `npm run smoke`: pass, including approval packet rendering and before/after diff.
+- `bash scripts/validate.sh`: pass, including `plan` artifact generation and GitHub-like rehearsal smoke.
