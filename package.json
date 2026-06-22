@@ -11,13 +11,17 @@
     "fixtures",
     "docs",
     "SKILL.md",
-    "README.md"
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "check": "tsc -p tsconfig.json --noEmit",
     "test": "npm run build && node --test dist/**/*.test.js",
     "smoke": "npm run build && node dist/src/cli.js rehearse fixtures/slack-action.json --format markdown && node dist/src/cli.js diff fixtures/before.json fixtures/after.json",
+    "package:smoke": "npm run build && npm pack --dry-run",
+    "release:check": "npm run check && npm test && npm run smoke && npm run package:smoke",
     "validate": "bash scripts/validate.sh"
   },
   "keywords": [
@@ -28,6 +32,14 @@
     "cli"
   ],
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rogerchappel/connector-rehearsal-skill.git"
+  },
+  "bugs": {
+    "url": "https://github.com/rogerchappel/connector-rehearsal-skill/issues"
+  },
+  "homepage": "https://github.com/rogerchappel/connector-rehearsal-skill#readme",
   "devDependencies": {
     "@types/node": "^20.14.0",
     "typescript": "^5.4.5"
