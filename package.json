@@ -1,0 +1,35 @@
+{
+  "name": "connector-rehearsal-skill",
+  "version": "0.1.0",
+  "description": "Local-first rehearsal planner for connector actions before external writes.",
+  "type": "module",
+  "bin": {
+    "connector-rehearsal": "./dist/src/cli.js"
+  },
+  "files": [
+    "dist",
+    "fixtures",
+    "docs",
+    "SKILL.md",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "check": "tsc -p tsconfig.json --noEmit",
+    "test": "npm run build && node --test dist/**/*.test.js",
+    "smoke": "npm run build && node dist/src/cli.js rehearse fixtures/slack-action.json --format markdown && node dist/src/cli.js diff fixtures/before.json fixtures/after.json",
+    "validate": "bash scripts/validate.sh"
+  },
+  "keywords": [
+    "agent-skills",
+    "connectors",
+    "dry-run",
+    "approval",
+    "cli"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "typescript": "^5.4.5"
+  }
+}
