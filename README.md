@@ -67,4 +67,5 @@ npm run package:smoke
 
 `package:smoke` builds the TypeScript output and runs `npm pack --dry-run` so
 reviewers can confirm the CLI, fixtures, docs, changelog, README, and license are
-included before a release.
+included before a release. It also asserts that the security policy ships in
+the tarball.
