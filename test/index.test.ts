@@ -19,6 +19,7 @@ test("rehearses a ready connector action", () => {
   assert.equal(artifact.ready_for_approval, true);
   assert.equal(artifact.risk_level, "medium");
   assert.equal(artifact.target[0], "#launch-review");
+  assert.deepEqual(artifact.issue_summary, { error: 0, warning: 0 });
 });
 
 test("blocks secret-like payload keys", () => {
@@ -29,12 +30,14 @@ test("blocks secret-like payload keys", () => {
   assert.equal(artifact.ready_for_approval, false);
   assert.equal(artifact.issues.some((issue) => issue.code === "secret_like_payload"), true);
   assert.equal(artifact.payload_preview.api_key, "[REDACTED]");
+  assert.deepEqual(artifact.issue_summary, { error: 1, warning: 0 });
 });
 
 test("renders approval markdown", () => {
   const markdown = renderApproval(rehearse(manifest));
   assert.match(markdown, /Connector Approval Packet/);
   assert.match(markdown, /Ready for approval: yes/);
+  assert.match(markdown, /Issue summary: 0 error, 0 warning/);
 });
 
 test("diffs before and after payloads", () => {

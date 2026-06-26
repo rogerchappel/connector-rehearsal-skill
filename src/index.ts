@@ -30,6 +30,10 @@ export interface RehearsalArtifact {
   rollback_note: string;
   evidence: string[];
   issues: RehearsalIssue[];
+  issue_summary: {
+    error: number;
+    warning: number;
+  };
   ready_for_approval: boolean;
 }
 
@@ -74,6 +78,7 @@ export function rehearse(manifest: ConnectorActionManifest): RehearsalArtifact {
     rollback_note: rollbackNote,
     evidence,
     issues,
+    issue_summary: summarizeIssues(issues),
     ready_for_approval: !hasErrors && approvalRequired
   };
 }
@@ -97,6 +102,7 @@ export function renderApproval(artifact: RehearsalArtifact): string {
     `Ready for approval: ${artifact.ready_for_approval ? "yes" : "no"}`,
     `Risk level: ${artifact.risk_level}`,
     `Approval required: ${artifact.approval_required ? "yes" : "no"}`,
+    `Issue summary: ${artifact.issue_summary.error} error, ${artifact.issue_summary.warning} warning`,
     "",
     "## Targets",
     "",
@@ -226,4 +232,11 @@ function error(code: string, message: string): RehearsalIssue {
 
 function warn(code: string, message: string): RehearsalIssue {
   return { level: "warning", code, message };
+}
+
+function summarizeIssues(issues: RehearsalIssue[]): { error: number; warning: number } {
+  return {
+    error: issues.filter((issue) => issue.level === "error").length,
+    warning: issues.filter((issue) => issue.level === "warning").length
+  };
 }
