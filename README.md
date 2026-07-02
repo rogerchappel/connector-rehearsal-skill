@@ -60,6 +60,7 @@ The release check runs:
 
 ```bash
 npm run check
+npm run lint
 npm test
 npm run smoke
 npm run package:smoke
