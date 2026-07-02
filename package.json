@@ -23,7 +23,8 @@
     "smoke": "npm run build && node dist/src/cli.js rehearse fixtures/slack-action.json --format markdown && node dist/src/cli.js diff fixtures/before.json fixtures/after.json",
     "package:smoke": "npm run build && node scripts/package-smoke.mjs",
     "release:check": "npm run check && npm test && npm run smoke && npm run package:smoke",
-    "validate": "bash scripts/validate.sh"
+    "validate": "bash scripts/validate.sh",
+    "lint": "npm run check"
   },
   "keywords": [
     "agent-skills",
