@@ -9,6 +9,7 @@ It is built for agents that need to preview side effects before touching Slack, 
 ```bash
 npm install
 npm run build
+node dist/src/cli.js --help
 node dist/src/cli.js rehearse fixtures/slack-action.json --format markdown
 node dist/src/cli.js plan fixtures/slack-action.json --out tmp/rehearsal
 node dist/src/cli.js diff fixtures/before.json fixtures/after.json
