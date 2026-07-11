@@ -1,6 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 import { diffObjects, rehearse, renderApproval, type ConnectorActionManifest } from "../src/index.js";
+
+const run = promisify(execFile);
 
 const manifest: ConnectorActionManifest = {
   connector: "slack",
@@ -43,4 +47,12 @@ test("renders approval markdown", () => {
 test("diffs before and after payloads", () => {
   const changes = diffObjects({ status: "draft", owner: "a" }, { status: "approved", owner: "a", evidence: true });
   assert.deepEqual(changes, ["added evidence: true", "changed status: \"draft\" -> \"approved\""]);
+});
+
+test("compiled CLI prints help", async () => {
+  const { stdout, stderr } = await run("node", ["dist/src/cli.js", "--help"]);
+
+  assert.match(stdout, /connector-rehearsal/);
+  assert.match(stdout, /rehearse <manifest/);
+  assert.equal(stderr, "");
 });
