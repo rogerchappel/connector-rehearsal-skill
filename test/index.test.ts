@@ -2,7 +2,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { diffObjects, rehearse, renderApproval, type ConnectorActionManifest } from "../src/index.js";
+import { mkdtemp, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { diffObjects, loadManifest, rehearse, renderApproval, type ConnectorActionManifest } from "../src/index.js";
 
 const run = promisify(execFile);
 
@@ -55,4 +58,60 @@ test("compiled CLI prints help", async () => {
   assert.match(stdout, /connector-rehearsal/);
   assert.match(stdout, /rehearse <manifest/);
   assert.equal(stderr, "");
+});
+
+test("loads and rehearses valid JSON and YAML manifests", async () => {
+  for (const fixture of ["fixtures/slack-action.json", "fixtures/crm-update.yaml"]) {
+    const artifact = rehearse(await loadManifest(fixture));
+    assert.equal(artifact.ready_for_approval, true, fixture);
+    assert.notDeepEqual(artifact.payload_preview, {}, fixture);
+  }
+});
+
+test("rejects missing and invalid runtime manifest fields", () => {
+  const invalidCases: Array<[string, unknown, RegExp]> = [
+    ["connector", { ...manifest, connector: "" }, /connector must be a non-empty string/],
+    ["action", { ...manifest, action: 4 }, /action must be a non-empty string/],
+    ["target", { ...manifest, target: 123 }, /target must be a non-empty string or an array/],
+    ["target item", { ...manifest, target: ["valid", ""] }, /target\[1\] must be a non-empty string/],
+    ["payload", { ...manifest, payload: "not-an-object" }, /payload must be a non-array object/],
+    ["empty payload", { ...manifest, payload: {} }, /payload must contain at least one field/],
+    ["approval", { ...manifest, approval_required: "yes" }, /approval_required must be a boolean/],
+    ["risk", { ...manifest, risk_level: "critical" }, /risk_level must be one of: low, medium, high/],
+    ["evidence", { ...manifest, evidence: "proof" }, /evidence must be an array of strings/],
+    ["evidence item", { ...manifest, evidence: ["proof", 2] }, /evidence\[1\] must be a string/]
+  ];
+
+  for (const [name, value, expected] of invalidCases) {
+    assert.throws(() => rehearse(value as ConnectorActionManifest), expected, name);
+  }
+});
+
+test("CLI reports actionable validation errors without writing approval artifacts", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "connector-rehearsal-test-"));
+  const manifestPath = join(directory, "invalid.json");
+  const outDir = join(directory, "artifacts");
+  await writeFile(manifestPath, JSON.stringify({
+    connector: "crm",
+    action: "update_contact",
+    target: 123,
+    payload: "not-an-object",
+    rollback_note: "Restore the before snapshot."
+  }));
+
+  await assert.rejects(
+    run("node", ["dist/src/cli.js", "rehearse", manifestPath]),
+    (error: Error & { stderr?: string }) => {
+      assert.match(error.stderr ?? "", /^Invalid manifest: target must be a non-empty string or an array of non-empty strings\.\n$/);
+      assert.doesNotMatch(error.stderr ?? "", /TypeError|toLowerCase/);
+      return true;
+    }
+  );
+  await assert.rejects(
+    run("node", ["dist/src/cli.js", "plan", manifestPath, "--out", outDir]),
+    /Command failed/
+  );
+  await assert.rejects(
+    import("node:fs/promises").then(({ access }) => access(join(outDir, "rehearsal.json")))
+  );
 });
