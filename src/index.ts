@@ -256,10 +256,17 @@ function parseSimpleYaml(raw: string): Record<string, unknown> {
       (root[currentKey] as unknown[]).push(coerceScalar(listMatch[1]));
       continue;
     }
+    const nestedPair = line.match(/^\s{2,}([A-Za-z0-9_-]+):\s*(.*)$/);
+    if (nestedPair && currentKey) {
+      const current = root[currentKey];
+      if (!isRecord(current)) root[currentKey] = {};
+      (root[currentKey] as Record<string, unknown>)[nestedPair[1]] = coerceScalar(nestedPair[2]);
+      continue;
+    }
     const pair = line.match(/^([A-Za-z0-9_-]+):\s*(.*)$/);
     if (!pair) continue;
     currentKey = pair[1];
-    root[currentKey] = pair[2] ? coerceScalar(pair[2]) : [];
+    root[currentKey] = pair[2] ? coerceScalar(pair[2]) : undefined;
   }
   return root;
 }

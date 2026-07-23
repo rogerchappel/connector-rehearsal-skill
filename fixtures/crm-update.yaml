@@ -1,6 +1,9 @@
 connector: crm
 action: update_contact
 target: contact:example-123
+payload:
+  status: qualified
+  owner: launch-team
 approval_required: true
 risk_level: medium
 rollback_note: Restore the previous contact fields from the attached before snapshot.
