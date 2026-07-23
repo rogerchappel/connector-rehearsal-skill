@@ -40,6 +40,15 @@ node dist/src/cli.js diff fixtures/before.json fixtures/after.json
 ```
 
 JSON is preferred. V1 also supports simple top-level YAML manifests for lightweight examples.
+YAML payloads may use one nested mapping level, as shown in
+`fixtures/crm-update.yaml`.
+
+Before generating an artifact, the CLI validates all runtime input. Connector
+and action names must be non-empty strings; targets must be a non-empty string
+or string array; payloads must be non-empty objects; and optional approval,
+risk, rollback, and evidence fields must match the documented types. Invalid
+manifests exit with an actionable `Invalid manifest:` error and do not produce
+approval artifacts.
 
 ## Safety Notes
 
