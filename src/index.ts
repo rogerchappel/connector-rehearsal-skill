@@ -46,6 +46,7 @@ export async function loadManifest(path: string): Promise<ConnectorActionManifes
 }
 
 export function rehearse(manifest: ConnectorActionManifest): RehearsalArtifact {
+  validateManifest(manifest);
   const target = normalizeTarget(manifest.target);
   const approvalRequired = manifest.approval_required ?? true;
   const riskLevel = manifest.risk_level ?? inferRisk(manifest, target);
@@ -81,6 +82,38 @@ export function rehearse(manifest: ConnectorActionManifest): RehearsalArtifact {
     issue_summary: summarizeIssues(issues),
     ready_for_approval: !hasErrors && approvalRequired
   };
+}
+
+export function validateManifest(value: unknown): asserts value is ConnectorActionManifest {
+  if (!isRecord(value)) invalid("manifest must be an object.");
+  if (!isNonEmptyString(value.connector)) invalid("connector must be a non-empty string.");
+  if (!isNonEmptyString(value.action)) invalid("action must be a non-empty string.");
+  if (!isNonEmptyString(value.target) && !Array.isArray(value.target)) {
+    invalid("target must be a non-empty string or an array of non-empty strings.");
+  }
+  if (Array.isArray(value.target)) {
+    if (value.target.length === 0) invalid("target must contain at least one entry.");
+    value.target.forEach((target, index) => {
+      if (!isNonEmptyString(target)) invalid(`target[${index}] must be a non-empty string.`);
+    });
+  }
+  if (!isRecord(value.payload)) invalid("payload must be a non-array object.");
+  if (Object.keys(value.payload).length === 0) invalid("payload must contain at least one field.");
+  if (value.approval_required !== undefined && typeof value.approval_required !== "boolean") {
+    invalid("approval_required must be a boolean when supplied.");
+  }
+  if (value.risk_level !== undefined && !["low", "medium", "high"].includes(String(value.risk_level))) {
+    invalid("risk_level must be one of: low, medium, high.");
+  }
+  if (value.rollback_note !== undefined && typeof value.rollback_note !== "string") {
+    invalid("rollback_note must be a string when supplied.");
+  }
+  if (value.evidence !== undefined) {
+    if (!Array.isArray(value.evidence)) invalid("evidence must be an array of strings when supplied.");
+    value.evidence.forEach((item, index) => {
+      if (typeof item !== "string") invalid(`evidence[${index}] must be a string.`);
+    });
+  }
 }
 
 export async function plan(manifestPath: string, outDir: string): Promise<RehearsalArtifact> {
@@ -154,6 +187,18 @@ export async function diffFiles(beforePath: string, afterPath: string): Promise<
 function normalizeTarget(target: string | string[] | undefined): string[] {
   if (!target) return [];
   return Array.isArray(target) ? target : [target];
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function isNonEmptyString(value: unknown): value is string {
+  return typeof value === "string" && value.trim().length > 0;
+}
+
+function invalid(message: string): never {
+  throw new Error(`Invalid manifest: ${message}`);
 }
 
 function inferRisk(manifest: ConnectorActionManifest, target: string[]): RiskLevel {
