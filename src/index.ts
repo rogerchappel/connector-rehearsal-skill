@@ -1,5 +1,6 @@
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { dirname, join } from "node:path";
+import { parse as parseYaml } from "yaml";
 
 export type RiskLevel = "low" | "medium" | "high";
 
@@ -40,7 +41,12 @@ export interface RehearsalArtifact {
 export async function loadManifest(path: string): Promise<ConnectorActionManifest> {
   const raw = await readFile(path, "utf8");
   if (path.endsWith(".yaml") || path.endsWith(".yml")) {
-    return parseSimpleYaml(raw) as unknown as ConnectorActionManifest;
+    try {
+      return parseYaml(raw, { prettyErrors: true, uniqueKeys: true }) as ConnectorActionManifest;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`Invalid YAML manifest: ${message}`);
+    }
   }
   return JSON.parse(raw) as ConnectorActionManifest;
 }
@@ -242,40 +248,6 @@ function flatten(value: unknown, prefix = ""): Record<string, unknown> {
     }
   }
   return result;
-}
-
-function parseSimpleYaml(raw: string): Record<string, unknown> {
-  const root: Record<string, unknown> = {};
-  let currentKey: string | undefined;
-  for (const line of raw.split(/\r?\n/)) {
-    if (!line.trim() || line.trim().startsWith("#")) continue;
-    const listMatch = line.match(/^\s+-\s+(.+)$/);
-    if (listMatch && currentKey) {
-      const current = root[currentKey];
-      if (!Array.isArray(current)) root[currentKey] = [];
-      (root[currentKey] as unknown[]).push(coerceScalar(listMatch[1]));
-      continue;
-    }
-    const nestedPair = line.match(/^\s{2,}([A-Za-z0-9_-]+):\s*(.*)$/);
-    if (nestedPair && currentKey) {
-      const current = root[currentKey];
-      if (!isRecord(current)) root[currentKey] = {};
-      (root[currentKey] as Record<string, unknown>)[nestedPair[1]] = coerceScalar(nestedPair[2]);
-      continue;
-    }
-    const pair = line.match(/^([A-Za-z0-9_-]+):\s*(.*)$/);
-    if (!pair) continue;
-    currentKey = pair[1];
-    root[currentKey] = pair[2] ? coerceScalar(pair[2]) : undefined;
-  }
-  return root;
-}
-
-function coerceScalar(value: string): unknown {
-  const trimmed = value.trim().replace(/^["']|["']$/g, "");
-  if (trimmed === "true") return true;
-  if (trimmed === "false") return false;
-  return trimmed;
 }
 
 function error(code: string, message: string): RehearsalIssue {
