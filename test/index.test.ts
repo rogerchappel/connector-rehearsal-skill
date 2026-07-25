@@ -68,6 +68,71 @@ test("loads and rehearses valid JSON and YAML manifests", async () => {
   }
 });
 
+test("preserves nested YAML mappings, lists, objects, and quoted scalars", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "connector-rehearsal-yaml-"));
+  const manifestPath = join(directory, "nested.yaml");
+  await writeFile(manifestPath, `connector: slack
+action: post_message
+target: "#release-review"
+payload:
+  message:
+    text: "hello: release team"
+    attempts: 2
+    urgent: false
+    thread_id: null
+    blocks:
+      - type: section
+        fields:
+          - label: 'Status'
+            value: ready
+      - type: context
+        elements:
+          - text: "Review #42"
+approval_required: true
+rollback_note: "Delete the drafted message."
+evidence:
+  - "docs/release:notes.md"
+`);
+
+  const artifact = rehearse(await loadManifest(manifestPath));
+  assert.deepEqual(artifact.payload_preview, {
+    message: {
+      text: "hello: release team",
+      attempts: 2,
+      urgent: false,
+      thread_id: null,
+      blocks: [
+        { type: "section", fields: [{ label: "Status", value: "ready" }] },
+        { type: "context", elements: [{ text: "Review #42" }] }
+      ]
+    }
+  });
+  assert.equal(artifact.ready_for_approval, true);
+});
+
+test("CLI rejects malformed YAML without producing a rewritten rehearsal", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "connector-rehearsal-yaml-error-"));
+  const manifestPath = join(directory, "malformed.yaml");
+  await writeFile(manifestPath, `connector: slack
+action: post_message
+target: "#release-review"
+payload:
+  message:
+    text: "unterminated
+approval_required: true
+rollback_note: "Delete the drafted message."
+`);
+
+  await assert.rejects(
+    run("node", ["dist/src/cli.js", "rehearse", manifestPath]),
+    (error: Error & { stderr?: string }) => {
+      assert.match(error.stderr ?? "", /^Invalid YAML manifest:/);
+      assert.doesNotMatch(error.stderr ?? "", /ready_for_approval/);
+      return true;
+    }
+  );
+});
+
 test("rejects missing and invalid runtime manifest fields", () => {
   const invalidCases: Array<[string, unknown, RegExp]> = [
     ["connector", { ...manifest, connector: "" }, /connector must be a non-empty string/],
