@@ -39,9 +39,10 @@ node dist/src/cli.js diff fixtures/before.json fixtures/after.json
 }
 ```
 
-JSON is preferred. V1 also supports simple top-level YAML manifests for lightweight examples.
-YAML payloads may use one nested mapping level, as shown in
-`fixtures/crm-update.yaml`.
+Manifests may be JSON or YAML (`.yaml`/`.yml`). YAML input supports nested
+mappings and sequences, quoted scalars, booleans, numbers, and null values.
+Malformed YAML and duplicate mapping keys fail with a nonzero CLI exit before
+any rehearsal is marked ready.
 
 Before generating an artifact, the CLI validates all runtime input. Connector
 and action names must be non-empty strings; targets must be a non-empty string
@@ -56,7 +57,6 @@ This project never calls external services and never stores credentials. It flag
 
 ## Limitations
 
-- The YAML parser intentionally supports only simple top-level manifest fields.
 - Risk inference is rule-based and should be reviewed by a human.
 - The CLI does not replace connector SDK authorization or policy engines.
 
