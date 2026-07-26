@@ -89,9 +89,9 @@ function printHelp(): void {
   console.log(`connector-rehearsal
 
 Usage:
-  connector-rehearsal plan <manifest.json|yaml> --out tmp/rehearsal
-  connector-rehearsal rehearse <manifest.json|yaml> --format markdown
-  connector-rehearsal render-approval <manifest.json|yaml> --out approval.md
+  connector-rehearsal plan <manifest.json|yaml|yml> --out tmp/rehearsal
+  connector-rehearsal rehearse <manifest.json|yaml|yml> --format markdown
+  connector-rehearsal render-approval <manifest.json|yaml|yml> --out approval.md
   connector-rehearsal diff <before.json> <after.json>
 `);
 }
