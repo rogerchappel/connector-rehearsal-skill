@@ -36,8 +36,13 @@ async function main(argv: string[]): Promise<number> {
 
   if (command === "render-approval") {
     const manifest = await loadManifest(required(positionals[0], "render-approval requires a manifest path."));
-    await writeOrPrint(renderApproval(rehearse(manifest)), options.out);
-    return 0;
+    const artifact = rehearse(manifest);
+    const errorCount = artifact.issue_summary.error;
+    await writeOrPrint(renderApproval(artifact), options.out, errorCount === 0);
+    if (options.out && errorCount > 0) {
+      console.error(`Wrote ${options.out}; approval blocked by ${errorCount} ${errorCount === 1 ? "error" : "errors"}.`);
+    }
+    return errorCount > 0 ? 1 : 0;
   }
 
   if (command === "diff") {
@@ -70,14 +75,14 @@ function parseArgs(args: string[]): { positionals: string[]; options: Options } 
   return { positionals, options };
 }
 
-async function writeOrPrint(output: string, out?: string): Promise<void> {
+async function writeOrPrint(output: string, out?: string, announce = true): Promise<void> {
   if (!out) {
     process.stdout.write(output.endsWith("\n") ? output : `${output}\n`);
     return;
   }
   await mkdir(dirname(out), { recursive: true });
   await writeFile(out, output.endsWith("\n") ? output : `${output}\n`, "utf8");
-  console.log(`Wrote ${out}`);
+  if (announce) console.log(`Wrote ${out}`);
 }
 
 function required(value: string | undefined, message: string): string {

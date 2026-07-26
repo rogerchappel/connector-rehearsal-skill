@@ -20,6 +20,9 @@ node dist/src/cli.js diff fixtures/before.json fixtures/after.json
 - `plan <manifest> --out <dir>` writes `rehearsal.json` and `approval.md`.
 - `rehearse <manifest> --format json|markdown` prints the dry-run artifact.
 - `render-approval <manifest> --out approval.md` writes a human review packet.
+  Like `plan` and `rehearse`, it exits nonzero when the rehearsal contains an
+  error. The packet is still retained for diagnosis, and the CLI reports that
+  approval is blocked instead of reporting a successful write.
 - `diff <before.json> <after.json>` prints changed fields for rollback review.
 
 ## Manifest Shape
