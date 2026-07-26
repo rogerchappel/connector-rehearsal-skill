@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Return a failing CLI status from `render-approval` when rehearsal errors
+  block approval, while retaining the redacted packet for diagnosis.
 - Preserve nested YAML mappings, sequences, and scalars with standards-based
   parsing, and reject malformed YAML instead of silently rewriting it.
 - Validate manifest field shapes before risk inference or artifact generation.
