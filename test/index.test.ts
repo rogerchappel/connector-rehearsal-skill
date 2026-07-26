@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { mkdtemp, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { diffObjects, loadManifest, rehearse, renderApproval, type ConnectorActionManifest } from "../src/index.js";
@@ -58,6 +58,60 @@ test("compiled CLI prints help", async () => {
   assert.match(stdout, /connector-rehearsal/);
   assert.match(stdout, /rehearse <manifest/);
   assert.equal(stderr, "");
+});
+
+test("render-approval writes ready packets and exits successfully", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "connector-approval-ready-"));
+  const outPath = join(directory, "approval.md");
+  const { stdout, stderr } = await run("node", [
+    "dist/src/cli.js", "render-approval", "fixtures/slack-action.json", "--out", outPath
+  ]);
+
+  assert.equal(stdout, `Wrote ${outPath}\n`);
+  assert.equal(stderr, "");
+  assert.match(await readFile(outPath, "utf8"), /Ready for approval: yes/);
+});
+
+test("render-approval retains missing-rollback packets but exits unsuccessfully", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "connector-approval-rollback-"));
+  const manifestPath = join(directory, "manifest.json");
+  const outPath = join(directory, "approval.md");
+  await writeFile(manifestPath, JSON.stringify({ ...manifest, rollback_note: "" }));
+
+  await assert.rejects(
+    run("node", ["dist/src/cli.js", "render-approval", manifestPath, "--out", outPath]),
+    (error: Error & { code?: number; stdout?: string; stderr?: string }) => {
+      assert.equal(error.code, 1);
+      assert.equal(error.stdout, "");
+      assert.equal(error.stderr, `Wrote ${outPath}; approval blocked by 1 error.\n`);
+      return true;
+    }
+  );
+  const packet = await readFile(outPath, "utf8");
+  assert.match(packet, /Ready for approval: no/);
+  assert.match(packet, /Issue summary: 1 error/);
+  assert.match(packet, /rollback_note is required/);
+});
+
+test("render-approval redacts secret-like payloads and exits unsuccessfully", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "connector-approval-secret-"));
+  const manifestPath = join(directory, "manifest.json");
+  const outPath = join(directory, "approval.md");
+  await writeFile(manifestPath, JSON.stringify({ ...manifest, payload: { api_key: "do-not-render" } }));
+
+  await assert.rejects(
+    run("node", ["dist/src/cli.js", "render-approval", manifestPath, "--out", outPath]),
+    (error: Error & { code?: number; stdout?: string; stderr?: string }) => {
+      assert.equal(error.code, 1);
+      assert.equal(error.stdout, "");
+      assert.equal(error.stderr, `Wrote ${outPath}; approval blocked by 1 error.\n`);
+      return true;
+    }
+  );
+  const packet = await readFile(outPath, "utf8");
+  assert.match(packet, /\[REDACTED\]/);
+  assert.doesNotMatch(packet, /do-not-render/);
+  assert.match(packet, /secret-like/);
 });
 
 test("loads and rehearses valid JSON and YAML manifests", async () => {
