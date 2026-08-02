@@ -73,13 +73,16 @@ The release check runs:
 
 ```bash
 npm run check
-npm run lint
-npm test
-npm run smoke
+npm run build
+npm run test:compiled
+npm run smoke:compiled
+npm run validate:cli
 npm run package:smoke
 ```
 
-`package:smoke` builds the TypeScript output and runs `npm pack --dry-run` so
+The gate builds once, then runs the compiled test and smoke suites. `validate:cli`
+exercises plan artifact generation and a JSON rehearsal. `package:smoke` runs
+`npm pack --dry-run` against that build so
 reviewers can confirm the CLI, fixtures, docs, changelog, README, and license are
 included before a release. It also asserts that the security policy ships in
 the tarball.
