@@ -234,3 +234,22 @@ test("CLI reports actionable validation errors without writing approval artifact
     import("node:fs/promises").then(({ access }) => access(join(outDir, "rehearsal.json")))
   );
 });
+
+test("release check delegates to the complete canonical validation gate", async () => {
+  const packageJson = JSON.parse(await readFile("package.json", "utf8")) as {
+    scripts: Record<string, string>;
+  };
+  const validationScript = await readFile("scripts/validate.sh", "utf8");
+
+  assert.equal(packageJson.scripts["release:check"], "npm run validate");
+  for (const command of [
+    "npm run check",
+    "npm run build",
+    "npm run test:compiled",
+    "npm run smoke:compiled",
+    "npm run validate:cli",
+    "npm run package:smoke"
+  ]) {
+    assert.match(validationScript, new RegExp(`^${command}$`, "m"));
+  }
+});
