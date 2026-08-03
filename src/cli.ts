@@ -8,13 +8,30 @@ interface Options {
   format?: "json" | "markdown";
 }
 
+type Command = "plan" | "rehearse" | "render-approval" | "diff";
+
+interface CommandSpec {
+  positionals: number;
+  options: ReadonlySet<keyof Options>;
+}
+
+const commandSpecs: Record<Command, CommandSpec> = {
+  plan: { positionals: 1, options: new Set(["out"]) },
+  rehearse: { positionals: 1, options: new Set(["out", "format"]) },
+  "render-approval": { positionals: 1, options: new Set(["out"]) },
+  diff: { positionals: 2, options: new Set(["out"]) }
+};
+
 async function main(argv: string[]): Promise<number> {
   const [command, ...rest] = argv;
-  const { positionals, options } = parseArgs(rest);
   if (!command || command === "help" || command === "--help") {
     printHelp();
     return 0;
   }
+  if (!(command in commandSpecs)) throw new Error(`Unknown command '${command}'.`);
+
+  const typedCommand = command as Command;
+  const { positionals, options } = parseArgs(typedCommand, rest);
 
   if (command === "plan") {
     const manifest = required(positionals[0], "plan requires a manifest path.");
@@ -57,20 +74,36 @@ async function main(argv: string[]): Promise<number> {
   throw new Error(`Unknown command '${command}'.`);
 }
 
-function parseArgs(args: string[]): { positionals: string[]; options: Options } {
+function parseArgs(command: Command, args: string[]): { positionals: string[]; options: Options } {
   const positionals: string[] = [];
   const options: Options = {};
+  const seen = new Set<keyof Options>();
   for (let i = 0; i < args.length; i += 1) {
     const arg = args[i];
-    if (arg === "--out") {
-      options.out = required(args[++i], "--out requires a path.");
-    } else if (arg === "--format") {
-      const format = required(args[++i], "--format requires json or markdown.");
+    if (arg === "--out" || arg === "--format") {
+      const option = arg.slice(2) as keyof Options;
+      if (!commandSpecs[command].options.has(option)) {
+        throw new Error(`${arg} is not supported by '${command}'.`);
+      }
+      if (seen.has(option)) throw new Error(`${arg} may only be specified once.`);
+      seen.add(option);
+      const value = args[++i];
+      if (!value || value.startsWith("--")) throw new Error(`${arg} requires a value.`);
+      if (option === "out") {
+        options.out = value;
+        continue;
+      }
+      const format = value;
       if (format !== "json" && format !== "markdown") throw new Error("--format must be json or markdown.");
       options.format = format;
-    } else {
-      positionals.push(arg);
+      continue;
     }
+    if (arg.startsWith("-")) throw new Error(`Unknown option '${arg}' for '${command}'.`);
+    positionals.push(arg);
+  }
+  const expected = commandSpecs[command].positionals;
+  if (positionals.length > expected) {
+    throw new Error(`'${command}' received ${positionals.length - expected} unexpected positional argument${positionals.length - expected === 1 ? "" : "s"}.`);
   }
   return { positionals, options };
 }
