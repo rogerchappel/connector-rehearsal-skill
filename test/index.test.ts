@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { mkdtemp, readFile, writeFile } from "node:fs/promises";
+import { access, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { diffObjects, loadManifest, rehearse, renderApproval, type ConnectorActionManifest } from "../src/index.js";
@@ -58,6 +58,37 @@ test("compiled CLI prints help", async () => {
   assert.match(stdout, /connector-rehearsal/);
   assert.match(stdout, /rehearse <manifest/);
   assert.equal(stderr, "");
+});
+
+test("compiled CLI rejects invalid command arguments without writing artifacts", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "connector-cli-invalid-"));
+  const invalidCases: Array<[string, string[], RegExp]> = [
+    ["extra plan positional", ["plan", "fixtures/slack-action.json", "extra.json"], /'plan' received 1 unexpected positional argument/],
+    ["extra rehearse positional", ["rehearse", "fixtures/slack-action.json", "extra.json"], /'rehearse' received 1 unexpected positional argument/],
+    ["extra render positional", ["render-approval", "fixtures/slack-action.json", "extra.json"], /'render-approval' received 1 unexpected positional argument/],
+    ["extra diff positional", ["diff", "fixtures/before.json", "fixtures/after.json", "extra.json"], /'diff' received 1 unexpected positional argument/],
+    ["unknown flag", ["rehearse", "fixtures/slack-action.json", "--verbose"], /Unknown option '--verbose' for 'rehearse'/],
+    ["unknown short flag", ["rehearse", "fixtures/slack-action.json", "-v"], /Unknown option '-v' for 'rehearse'/],
+    ["duplicate flag", ["plan", "fixtures/slack-action.json", "--out", join(directory, "one"), "--out", join(directory, "two")], /--out may only be specified once/],
+    ["duplicate format", ["rehearse", "fixtures/slack-action.json", "--format", "json", "--format", "markdown"], /--format may only be specified once/],
+    ["unsupported plan format", ["plan", "fixtures/slack-action.json", "--format", "json"], /--format is not supported by 'plan'/],
+    ["unsupported render format", ["render-approval", "fixtures/slack-action.json", "--format", "markdown"], /--format is not supported by 'render-approval'/],
+    ["unsupported diff format", ["diff", "fixtures/before.json", "fixtures/after.json", "--format", "markdown"], /--format is not supported by 'diff'/]
+  ];
+
+  for (const [name, args, expected] of invalidCases) {
+    const outPath = join(directory, `${name.replaceAll(" ", "-")}.txt`);
+    await assert.rejects(
+      run("node", ["dist/src/cli.js", ...args, "--out", outPath]),
+      (error: Error & { code?: number; stdout?: string; stderr?: string }) => {
+        assert.equal(error.code, 1, name);
+        assert.equal(error.stdout, "", name);
+        assert.match(error.stderr ?? "", expected, name);
+        return true;
+      }
+    );
+    await assert.rejects(access(outPath));
+  }
 });
 
 test("render-approval writes ready packets and exits successfully", async () => {
