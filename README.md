@@ -56,7 +56,7 @@ approval artifacts.
 
 ## Safety Notes
 
-This project never calls external services and never stores credentials. It flags missing rollback notes, broad targets, disabled approval, missing evidence, and secret-looking payload keys.
+This project never calls external services and never stores credentials. It flags missing rollback notes, broad targets, disabled approval, missing evidence, and secret-looking payload keys. Broad-target inference recognizes `*` and the words `all`, `everyone`, `workspace`, `org`, and `organization` when they are standalone or delimited by non-alphanumeric characters (for example, `#all-hands`). Embedded substrings in identifiers such as `#small-team` or `organizationId` are not treated as broad targets.
 
 ## Limitations
 

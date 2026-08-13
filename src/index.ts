@@ -215,7 +215,9 @@ function inferRisk(manifest: ConnectorActionManifest, target: string[]): RiskLev
 }
 
 function isBroadTarget(target: string): boolean {
-  return ["*", "all", "everyone", "workspace", "org", "organization"].some((term) => target.toLowerCase().includes(term));
+  const normalized = target.trim();
+  return normalized === "*"
+    || /(?:^|[^a-z0-9])(?:all|everyone|workspace|org|organization)(?=$|[^a-z0-9])/i.test(normalized);
 }
 
 function looksSecret(key: string): boolean {
