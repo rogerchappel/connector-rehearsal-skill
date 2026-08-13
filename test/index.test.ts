@@ -29,6 +29,24 @@ test("rehearses a ready connector action", () => {
   assert.deepEqual(artifact.issue_summary, { error: 0, warning: 0 });
 });
 
+test("infers high risk and reports broad targets as delimited words", () => {
+  for (const target of ["all", "@everyone", "workspace", "org", "organization", "#all-hands"]) {
+    const artifact = rehearse({ ...manifest, target });
+
+    assert.equal(artifact.risk_level, "high", target);
+    assert.equal(artifact.issues.some((issue) => issue.code === "broad_target"), true, target);
+  }
+});
+
+test("does not treat broad-target substrings inside identifiers as broad", () => {
+  for (const target of ["#small-team", "installation", "workspace2", "organizationId"]) {
+    const artifact = rehearse({ ...manifest, target });
+
+    assert.equal(artifact.risk_level, "medium", target);
+    assert.equal(artifact.issues.some((issue) => issue.code === "broad_target"), false, target);
+  }
+});
+
 test("blocks secret-like payload keys", () => {
   const artifact = rehearse({
     ...manifest,
