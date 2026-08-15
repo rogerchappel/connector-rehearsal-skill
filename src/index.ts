@@ -208,10 +208,21 @@ function invalid(message: string): never {
 }
 
 function inferRisk(manifest: ConnectorActionManifest, target: string[]): RiskLevel {
-  const action = manifest.action?.toLowerCase() ?? "";
-  if (target.some(isBroadTarget) || /delete|remove|bulk|invite/.test(action)) return "high";
-  if (/update|send|create|post/.test(action)) return "medium";
+  const actionTokens = tokenizeAction(manifest.action ?? "");
+  if (target.some(isBroadTarget) || actionTokens.some((token) => ["delete", "remove", "bulk", "invite"].includes(token))) {
+    return "high";
+  }
+  if (actionTokens.some((token) => ["update", "send", "create", "post"].includes(token))) return "medium";
   return "low";
+}
+
+function tokenizeAction(action: string): string[] {
+  return action
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .replace(/([A-Z]+)([A-Z][a-z])/g, "$1 $2")
+    .split(/[^a-z0-9]+/i)
+    .filter(Boolean)
+    .map((token) => token.toLowerCase());
 }
 
 function isBroadTarget(target: string): boolean {
