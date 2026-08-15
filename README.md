@@ -58,6 +58,8 @@ approval artifacts.
 
 This project never calls external services and never stores credentials. It flags missing rollback notes, broad targets, disabled approval, missing evidence, and secret-looking payload keys. Broad-target inference recognizes `*` and the words `all`, `everyone`, `workspace`, `org`, and `organization` when they are standalone or delimited by non-alphanumeric characters (for example, `#all-hands`). Embedded substrings in identifiers such as `#small-team` or `organizationId` are not treated as broad targets.
 
+Action-name risk inference matches complete mutation tokens. It recognizes tokens separated by non-alphanumeric delimiters (such as `_`, `-`, `.`, and `/`) or camel-case boundaries, so `delete_contact`, `send-message`, and `bulkInvite` are classified by their mutation verbs. Mutation-looking substrings within a token do not count: read-like names such as `sender_lookup` and `undelete_contact` remain low risk unless another rule applies.
+
 ## Limitations
 
 - Risk inference is rule-based and should be reviewed by a human.
