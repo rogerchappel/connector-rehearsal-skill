@@ -47,6 +47,29 @@ test("does not treat broad-target substrings inside identifiers as broad", () =>
   }
 });
 
+test("infers action risk from mutation verbs across naming conventions", () => {
+  const cases: Array<[string, "medium" | "high"]> = [
+    ["delete_contact", "high"],
+    ["remove-contact", "high"],
+    ["bulkInvite", "high"],
+    ["invite.contact", "high"],
+    ["update_contact", "medium"],
+    ["send-message", "medium"],
+    ["createContact", "medium"],
+    ["post/message", "medium"]
+  ];
+
+  for (const [action, expectedRisk] of cases) {
+    assert.equal(rehearse({ ...manifest, action, target: "contact-123" }).risk_level, expectedRisk, action);
+  }
+});
+
+test("does not infer action risk from mutation substrings inside tokens", () => {
+  for (const action of ["sender_lookup", "undelete_contact", "creator_profile", "poster_metadata", "bulkhead_status"]) {
+    assert.equal(rehearse({ ...manifest, action, target: "contact-123" }).risk_level, "low", action);
+  }
+});
+
 test("blocks secret-like payload keys", () => {
   const artifact = rehearse({
     ...manifest,
