@@ -23,4 +23,10 @@ if (missing.length) {
   process.exit(1);
 }
 
+const packagedTests = [...files].filter((file) => file.startsWith("dist/test/"));
+if (packagedTests.length) {
+  console.error(`Package smoke failed; compiled test artifacts were included:\n${packagedTests.join("\n")}`);
+  process.exit(1);
+}
+
 console.log(`package smoke ok: ${pack.filename} includes ${pack.files.length} files`);
