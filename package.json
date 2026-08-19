@@ -7,7 +7,7 @@
     "connector-rehearsal": "./dist/src/cli.js"
   },
   "files": [
-    "dist",
+    "dist/src",
     "fixtures",
     "docs",
     "SKILL.md",
@@ -37,6 +37,9 @@
     "cli"
   ],
   "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/rogerchappel/connector-rehearsal-skill.git"
