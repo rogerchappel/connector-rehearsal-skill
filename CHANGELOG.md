@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Distinguish literal dotted object keys from nested paths in before/after diffs.
 - Return a failing CLI status from `render-approval` when rehearsal errors
   block approval, while retaining the redacted packet for diagnosis.
 - Preserve nested YAML mappings, sequences, and scalars with standards-based

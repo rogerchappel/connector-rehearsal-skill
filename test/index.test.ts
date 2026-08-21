@@ -93,6 +93,34 @@ test("diffs before and after payloads", () => {
   assert.deepEqual(changes, ["added evidence: true", "changed status: \"draft\" -> \"approved\""]);
 });
 
+test("diffs literal dotted keys independently from nested keys", () => {
+  assert.deepEqual(
+    diffObjects(
+      { "a.b": 1, a: { b: 2 }, "removed.key": true },
+      { "a.b": 9, a: { b: 2, c: 3 }, "added.key": true }
+    ),
+    [
+      "changed [\"a.b\"]: 1 -> 9",
+      "added [\"added.key\"]: true",
+      "removed [\"removed.key\"]: true",
+      "added a.c: 3"
+    ]
+  );
+});
+
+test("compiled CLI distinguishes literal dotted keys from nested keys", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "connector-diff-paths-"));
+  const beforePath = join(directory, "before.json");
+  const afterPath = join(directory, "after.json");
+  await writeFile(beforePath, JSON.stringify({ "a.b": 1, a: { b: 2 } }));
+  await writeFile(afterPath, JSON.stringify({ "a.b": 9, a: { b: 3 } }));
+
+  const { stdout, stderr } = await run("node", ["dist/src/cli.js", "diff", beforePath, afterPath]);
+
+  assert.equal(stdout, "changed [\"a.b\"]: 1 -> 9\nchanged a.b: 2 -> 3\n");
+  assert.equal(stderr, "");
+});
+
 test("compiled CLI prints help", async () => {
   const { stdout, stderr } = await run("node", ["dist/src/cli.js", "--help"]);
 

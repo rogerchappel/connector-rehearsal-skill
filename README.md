@@ -25,6 +25,11 @@ node dist/src/cli.js diff fixtures/before.json fixtures/after.json
   approval is blocked instead of reporting a successful write.
 - `diff <before.json> <after.json>` prints changed fields for rollback review.
 
+Diff paths use dot notation for identifier-like keys and bracketed JSON strings
+for keys that contain punctuation. For example, nested `{ "a": { "b": 2 } }`
+is reported as `a.b`, while the literal key `{ "a.b": 1 }` is reported as
+`["a.b"]`, so additions, removals, and changes cannot collide.
+
 ## Manifest Shape
 
 ```json

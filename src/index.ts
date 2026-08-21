@@ -249,18 +249,29 @@ function redactPayload(payload: Record<string, unknown>): Record<string, unknown
   return result;
 }
 
-function flatten(value: unknown, prefix = ""): Record<string, unknown> {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return prefix ? { [prefix]: value } : {};
+function flatten(value: unknown, segments: string[] = []): Record<string, unknown> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return segments.length > 0 ? { [renderPath(segments)]: value } : {};
+  }
   const result: Record<string, unknown> = {};
   for (const [key, child] of Object.entries(value as Record<string, unknown>)) {
-    const path = prefix ? `${prefix}.${key}` : key;
+    const path = [...segments, key];
     if (child && typeof child === "object" && !Array.isArray(child)) {
       Object.assign(result, flatten(child, path));
     } else {
-      result[path] = child;
+      result[renderPath(path)] = child;
     }
   }
   return result;
+}
+
+function renderPath(segments: string[]): string {
+  return segments.map((segment, index) => {
+    if (/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(segment)) {
+      return index === 0 ? segment : `.${segment}`;
+    }
+    return `[${JSON.stringify(segment)}]`;
+  }).join("");
 }
 
 function error(code: string, message: string): RehearsalIssue {
