@@ -102,8 +102,8 @@ test("diffs literal dotted keys independently from nested keys", () => {
     [
       "changed [\"a.b\"]: 1 -> 9",
       "added [\"added.key\"]: true",
-      "added a.c: 3",
-      "removed [\"removed.key\"]: true"
+      "removed [\"removed.key\"]: true",
+      "added a.c: 3"
     ]
   );
 });
