@@ -5,7 +5,7 @@ import { promisify } from "node:util";
 import { access, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { diffObjects, loadManifest, rehearse, renderApproval, type ConnectorActionManifest } from "../src/index.js";
+import { diffObjects, loadManifest, rehearse, renderApproval, type ConnectorActionManifest, type RehearsalArtifact } from "../src/index.js";
 
 const run = promisify(execFile);
 
@@ -79,6 +79,24 @@ test("blocks secret-like payload keys", () => {
   assert.equal(artifact.issues.some((issue) => issue.code === "secret_like_payload"), true);
   assert.equal(artifact.payload_preview.api_key, "[REDACTED]");
   assert.deepEqual(artifact.issue_summary, { error: 1, warning: 0 });
+});
+
+test("recursively redacts secret-like keys inside payload arrays", () => {
+  const blocks = [
+    { type: "section", text: "Release ready", metadata: { api_key: "nested-secret" } },
+    { type: "context", elements: ["plain text", { password: "deep-secret", label: "owner" }] }
+  ];
+  const artifact = rehearse({ ...manifest, payload: { blocks, retries: [1, 2, 3] } });
+
+  assert.equal(artifact.ready_for_approval, false);
+  assert.equal(artifact.issues.filter((issue) => issue.code === "secret_like_payload").length, 2);
+  assert.deepEqual(artifact.payload_preview, {
+    blocks: [
+      { type: "section", text: "Release ready", metadata: { api_key: "[REDACTED]" } },
+      { type: "context", elements: ["plain text", { password: "[REDACTED]", label: "owner" }] }
+    ],
+    retries: [1, 2, 3]
+  });
 });
 
 test("renders approval markdown", () => {
@@ -212,6 +230,32 @@ test("render-approval redacts secret-like payloads and exits unsuccessfully", as
   assert.match(packet, /\[REDACTED\]/);
   assert.doesNotMatch(packet, /do-not-render/);
   assert.match(packet, /secret-like/);
+});
+
+test("compiled CLI redacts secrets nested in arrays and blocks readiness", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "connector-approval-nested-secret-"));
+  const manifestPath = join(directory, "manifest.json");
+  await writeFile(manifestPath, JSON.stringify({
+    ...manifest,
+    payload: { blocks: [{ text: "keep me", auth_token: "do-not-render" }], tags: ["one", "two"] }
+  }));
+
+  await assert.rejects(
+    run("node", ["dist/src/cli.js", "rehearse", manifestPath, "--format", "json"]),
+    (error: Error & { code?: number; stdout?: string; stderr?: string }) => {
+      assert.equal(error.code, 1);
+      const artifact = JSON.parse(error.stdout ?? "") as RehearsalArtifact;
+      assert.equal(artifact.ready_for_approval, false);
+      assert.equal(artifact.issues.some((issue) => issue.code === "secret_like_payload"), true);
+      assert.deepEqual(artifact.payload_preview, {
+        blocks: [{ text: "keep me", auth_token: "[REDACTED]" }],
+        tags: ["one", "two"]
+      });
+      assert.doesNotMatch(error.stdout ?? "", /do-not-render/);
+      assert.equal(error.stderr, "");
+      return true;
+    }
+  );
 });
 
 test("loads and rehearses valid JSON and YAML manifests", async () => {
