@@ -68,10 +68,8 @@ export function rehearse(manifest: ConnectorActionManifest): RehearsalArtifact {
   if (evidence.length === 0) issues.push(warn("missing_evidence", "Add evidence links or local artifact paths for reviewers."));
   if (target.some(isBroadTarget)) issues.push(warn("broad_target", "Target looks broad; narrow it or require explicit approval."));
 
-  for (const key of Object.keys(flatten(manifest.payload ?? {}))) {
-    if (looksSecret(key)) {
-      issues.push(error("secret_like_payload", `Payload key '${key}' looks secret-like and should not be rehearsed in plaintext.`));
-    }
+  for (const key of secretPayloadKeys(manifest.payload ?? {})) {
+    issues.push(error("secret_like_payload", `Payload key '${key}' looks secret-like and should not be rehearsed in plaintext.`));
   }
 
   const hasErrors = issues.some((issue) => issue.level === "error");
@@ -240,13 +238,28 @@ function redactPayload(payload: Record<string, unknown>): Record<string, unknown
   for (const [key, value] of Object.entries(payload)) {
     if (looksSecret(key)) {
       result[key] = "[REDACTED]";
-    } else if (value && typeof value === "object" && !Array.isArray(value)) {
-      result[key] = redactPayload(value as Record<string, unknown>);
     } else {
-      result[key] = value;
+      result[key] = redactValue(value);
     }
   }
   return result;
+}
+
+function redactValue(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(redactValue);
+  if (value && typeof value === "object") return redactPayload(value as Record<string, unknown>);
+  return value;
+}
+
+function secretPayloadKeys(value: unknown, prefix = ""): string[] {
+  if (Array.isArray(value)) {
+    return value.flatMap((child, index) => secretPayloadKeys(child, `${prefix}[${index}]`));
+  }
+  if (!value || typeof value !== "object") return [];
+  return Object.entries(value as Record<string, unknown>).flatMap(([key, child]) => {
+    const path = prefix ? `${prefix}.${key}` : key;
+    return looksSecret(key) ? [path] : secretPayloadKeys(child, path);
+  });
 }
 
 function flatten(value: unknown, segments: string[] = []): Record<string, unknown> {
