@@ -29,6 +29,9 @@ Diff paths use dot notation for identifier-like keys and bracketed JSON strings
 for keys that contain punctuation. For example, nested `{ "a": { "b": 2 } }`
 is reported as `a.b`, while the literal key `{ "a.b": 1 }` is reported as
 `["a.b"]`, so additions, removals, and changes cannot collide.
+Empty objects are retained as diff values, including at nested paths, so adding
+or removing an empty configuration section is reported instead of producing
+`No changes.`.
 
 ## Manifest Shape
 
