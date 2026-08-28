@@ -266,6 +266,9 @@ function flatten(value: unknown, segments: string[] = []): Record<string, unknow
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     return segments.length > 0 ? { [renderPath(segments)]: value } : {};
   }
+  if (segments.length > 0 && Object.keys(value).length === 0) {
+    return { [renderPath(segments)]: {} };
+  }
   const result: Record<string, unknown> = {};
   for (const [key, child] of Object.entries(value as Record<string, unknown>)) {
     const path = [...segments, key];

@@ -126,6 +126,21 @@ test("diffs literal dotted keys independently from nested keys", () => {
   );
 });
 
+test("diffs added and removed empty objects", () => {
+  assert.deepEqual(
+    diffObjects(
+      { retained: {}, removed: {}, nested: { removed: {} } },
+      { retained: {}, added: {}, nested: { added: {} } }
+    ),
+    [
+      "added added: {}",
+      "removed nested.removed: {}",
+      "added nested.added: {}",
+      "removed removed: {}"
+    ].sort()
+  );
+});
+
 test("compiled CLI distinguishes literal dotted keys from nested keys", async () => {
   const directory = await mkdtemp(join(tmpdir(), "connector-diff-paths-"));
   const beforePath = join(directory, "before.json");
@@ -136,6 +151,22 @@ test("compiled CLI distinguishes literal dotted keys from nested keys", async ()
   const { stdout, stderr } = await run("node", ["dist/src/cli.js", "diff", beforePath, afterPath]);
 
   assert.equal(stdout, "changed [\"a.b\"]: 1 -> 9\nchanged a.b: 2 -> 3\n");
+  assert.equal(stderr, "");
+});
+
+test("compiled CLI reports nested empty-object additions and removals", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "connector-diff-empty-objects-"));
+  const beforePath = join(directory, "before.json");
+  const afterPath = join(directory, "after.json");
+  await writeFile(beforePath, JSON.stringify({ removed: {}, nested: { removed: {} } }));
+  await writeFile(afterPath, JSON.stringify({ added: {}, nested: { added: {} } }));
+
+  const { stdout, stderr } = await run("node", ["dist/src/cli.js", "diff", beforePath, afterPath]);
+
+  assert.equal(
+    stdout,
+    "added added: {}\nadded nested.added: {}\nremoved nested.removed: {}\nremoved removed: {}\n"
+  );
   assert.equal(stderr, "");
 });
 
