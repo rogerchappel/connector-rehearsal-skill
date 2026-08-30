@@ -62,6 +62,13 @@ risk, rollback, and evidence fields must match the documented types. Invalid
 manifests exit with an actionable `Invalid manifest:` error and do not produce
 approval artifacts.
 
+Every supplied evidence entry must contain non-whitespace text. Blank entries
+fail with an indexed diagnostic such as `evidence[1] must be a non-empty
+string`. Approval Markdown collapses line breaks in connector, action, target,
+rollback, and evidence text and escapes Markdown control characters, so
+manifest content cannot introduce headings, list items, or other packet
+structure.
+
 ## Safety Notes
 
 This project never calls external services and never stores credentials. It
