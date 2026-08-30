@@ -106,6 +106,32 @@ test("renders approval markdown", () => {
   assert.match(markdown, /Issue summary: 0 error, 0 warning/);
 });
 
+test("rejects blank evidence with an indexed diagnostic", () => {
+  assert.throws(
+    () => rehearse({ ...manifest, evidence: ["docs/proof.md", " \t "] }),
+    /Invalid manifest: evidence\[1\] must be a non-empty string\./
+  );
+});
+
+test("renders manifest text without allowing Markdown structure injection", () => {
+  const markdown = renderApproval(rehearse({
+    ...manifest,
+    connector: "slack\n## Injected connector",
+    action: "post_*message*",
+    target: "#team\n- injected target",
+    rollback_note: "Undo it.\n## Injected rollback",
+    evidence: ["line one\n## Injected evidence", "docs/ordinary-proof.md"]
+  }));
+
+  assert.doesNotMatch(markdown, /\n## Injected/);
+  assert.doesNotMatch(markdown, /\n- injected target/);
+  assert.match(markdown, /slack \\#\\# Injected connector\/post\\_\\\*message\\\*/);
+  assert.match(markdown, /- \\#team - injected target/);
+  assert.match(markdown, /Undo it\. ## Injected rollback/);
+  assert.match(markdown, /- line one \\#\\# Injected evidence/);
+  assert.match(markdown, /- docs\/ordinary-proof\.md/);
+});
+
 test("diffs before and after payloads", () => {
   const changes = diffObjects({ status: "draft", owner: "a" }, { status: "approved", owner: "a", evidence: true });
   assert.deepEqual(changes, ["added evidence: true", "changed status: \"draft\" -> \"approved\""]);
@@ -373,7 +399,8 @@ test("rejects missing and invalid runtime manifest fields", () => {
     ["approval", { ...manifest, approval_required: "yes" }, /approval_required must be a boolean/],
     ["risk", { ...manifest, risk_level: "critical" }, /risk_level must be one of: low, medium, high/],
     ["evidence", { ...manifest, evidence: "proof" }, /evidence must be an array of strings/],
-    ["evidence item", { ...manifest, evidence: ["proof", 2] }, /evidence\[1\] must be a string/]
+    ["evidence item", { ...manifest, evidence: ["proof", 2] }, /evidence\[1\] must be a non-empty string/],
+    ["blank evidence item", { ...manifest, evidence: ["proof", "   "] }, /evidence\[1\] must be a non-empty string/]
   ];
 
   for (const [name, value, expected] of invalidCases) {
@@ -408,6 +435,29 @@ test("CLI reports actionable validation errors without writing approval artifact
   await assert.rejects(
     import("node:fs/promises").then(({ access }) => access(join(outDir, "rehearsal.json")))
   );
+});
+
+test("compiled CLI rejects blank evidence and safely renders multiline evidence", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "connector-evidence-contract-"));
+  const manifestPath = join(directory, "manifest.json");
+  await writeFile(manifestPath, JSON.stringify({ ...manifest, evidence: ["proof", "   "] }));
+
+  await assert.rejects(
+    run("node", ["dist/src/cli.js", "rehearse", manifestPath, "--format", "markdown"]),
+    (error: Error & { stderr?: string }) => {
+      assert.equal(error.stderr, "Invalid manifest: evidence[1] must be a non-empty string.\n");
+      return true;
+    }
+  );
+
+  await writeFile(manifestPath, JSON.stringify({
+    ...manifest,
+    evidence: ["line one\n## Injected section", "docs/ordinary-proof.md"]
+  }));
+  const { stdout } = await run("node", ["dist/src/cli.js", "rehearse", manifestPath, "--format", "markdown"]);
+  assert.doesNotMatch(stdout, /\n## Injected section/);
+  assert.match(stdout, /- line one \\#\\# Injected section/);
+  assert.match(stdout, /- docs\/ordinary-proof\.md/);
 });
 
 test("release check delegates to the complete canonical validation gate", async () => {
