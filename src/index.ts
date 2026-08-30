@@ -115,7 +115,7 @@ export function validateManifest(value: unknown): asserts value is ConnectorActi
   if (value.evidence !== undefined) {
     if (!Array.isArray(value.evidence)) invalid("evidence must be an array of strings when supplied.");
     value.evidence.forEach((item, index) => {
-      if (typeof item !== "string") invalid(`evidence[${index}] must be a string.`);
+      if (!isNonEmptyString(item)) invalid(`evidence[${index}] must be a non-empty string.`);
     });
   }
 }
@@ -134,7 +134,7 @@ export function renderApproval(artifact: RehearsalArtifact): string {
     ? ["No issues detected."]
     : artifact.issues.map((issue) => `- ${issue.level.toUpperCase()} ${issue.code}: ${issue.message}`);
   return [
-    `# Connector Approval Packet: ${artifact.connector}/${artifact.action}`,
+    `# Connector Approval Packet: ${markdownText(artifact.connector)}/${markdownText(artifact.action)}`,
     "",
     `Ready for approval: ${artifact.ready_for_approval ? "yes" : "no"}`,
     `Risk level: ${artifact.risk_level}`,
@@ -143,7 +143,7 @@ export function renderApproval(artifact: RehearsalArtifact): string {
     "",
     "## Targets",
     "",
-    ...artifact.target.map((target) => `- ${target}`),
+    ...artifact.target.map((target) => `- ${markdownText(target)}`),
     "",
     "## Payload Preview",
     "",
@@ -153,16 +153,23 @@ export function renderApproval(artifact: RehearsalArtifact): string {
     "",
     "## Rollback",
     "",
-    artifact.rollback_note || "Missing rollback note.",
+    artifact.rollback_note ? markdownText(artifact.rollback_note) : "Missing rollback note.",
     "",
     "## Evidence",
     "",
-    ...(artifact.evidence.length === 0 ? ["No evidence supplied."] : artifact.evidence.map((item) => `- ${item}`)),
+    ...(artifact.evidence.length === 0 ? ["No evidence supplied."] : artifact.evidence.map((item) => `- ${markdownText(item)}`)),
     "",
     "## Issues",
     "",
     ...issueLines
   ].join("\n");
+}
+
+function markdownText(value: string): string {
+  return value
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/([\\`*{}\[\]()<>#+!_|~])/g, "\\$1");
 }
 
 export function diffObjects(before: unknown, after: unknown): string[] {
