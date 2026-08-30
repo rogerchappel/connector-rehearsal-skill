@@ -127,7 +127,7 @@ test("renders manifest text without allowing Markdown structure injection", () =
   assert.doesNotMatch(markdown, /\n- injected target/);
   assert.match(markdown, /slack \\#\\# Injected connector\/post\\_\\\*message\\\*/);
   assert.match(markdown, /- \\#team - injected target/);
-  assert.match(markdown, /Undo it\. ## Injected rollback/);
+  assert.match(markdown, /Undo it\. \\#\\# Injected rollback/);
   assert.match(markdown, /- line one \\#\\# Injected evidence/);
   assert.match(markdown, /- docs\/ordinary-proof\.md/);
 });
