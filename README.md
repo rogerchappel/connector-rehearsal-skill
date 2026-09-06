@@ -109,8 +109,10 @@ npm run package:smoke
 ```
 
 The gate builds once, then runs the compiled test and smoke suites. `validate:cli`
-exercises plan artifact generation and a JSON rehearsal. `package:smoke` runs
-`npm pack --dry-run` against that build so
-reviewers can confirm the CLI, fixtures, docs, changelog, README, and license are
-included before a release. It also asserts that the security policy ships in
-the tarball.
+exercises plan artifact generation and a JSON rehearsal. Packaging does not
+depend on that earlier build: npm's `prepack` hook rebuilds `dist` automatically
+for both `npm pack` and `npm pack --dry-run`. `package:smoke` removes `dist`,
+checks the clean dry-run contents, creates and extracts a temporary tarball, and
+invokes its declared `connector-rehearsal` binary with `--help`. It confirms the
+CLI, fixtures, docs, changelog, README, license, and security policy ship while
+compiled tests remain excluded.
