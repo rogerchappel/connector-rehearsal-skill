@@ -18,6 +18,7 @@
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "prepack": "npm run build",
     "check": "tsc -p tsconfig.json --noEmit",
     "test": "npm run build && npm run test:compiled",
     "test:compiled": "node --test dist/**/*.test.js",
