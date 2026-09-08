@@ -32,6 +32,10 @@ is reported as `a.b`, while the literal key `{ "a.b": 1 }` is reported as
 Empty objects are retained as diff values, including at nested paths, so adding
 or removing an empty configuration section is reported instead of producing
 `No changes.`.
+The command accepts any valid JSON root value. Top-level arrays and scalars are
+compared as complete values at the `$` root path, while object roots retain the
+field-level paths described above. For example, changing `[1, 2]` to `[1, 3]`
+is reported as `changed $: [1,2] -> [1,3]`.
 
 ## Manifest Shape
 
