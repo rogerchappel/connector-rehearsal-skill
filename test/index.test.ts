@@ -167,6 +167,13 @@ test("diffs added and removed empty objects", () => {
   );
 });
 
+test("diffs unequal top-level arrays and scalars at the root path", () => {
+  assert.deepEqual(diffObjects([1, 2], [1, 3]), ["changed $: [1,2] -> [1,3]"]);
+  assert.deepEqual(diffObjects(1, 2), ["changed $: 1 -> 2"]);
+  assert.deepEqual(diffObjects("before", null), ["changed $: \"before\" -> null"]);
+  assert.deepEqual(diffObjects([1, 2], [1, 2]), []);
+});
+
 test("compiled CLI distinguishes literal dotted keys from nested keys", async () => {
   const directory = await mkdtemp(join(tmpdir(), "connector-diff-paths-"));
   const beforePath = join(directory, "before.json");
@@ -194,6 +201,24 @@ test("compiled CLI reports nested empty-object additions and removals", async ()
     "added added: {}\nadded nested.added: {}\nremoved nested.removed: {}\nremoved removed: {}\n"
   );
   assert.equal(stderr, "");
+});
+
+test("compiled CLI reports unequal top-level arrays and scalars", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "connector-diff-root-values-"));
+  const beforePath = join(directory, "before.json");
+  const afterPath = join(directory, "after.json");
+
+  await writeFile(beforePath, JSON.stringify([1, 2]));
+  await writeFile(afterPath, JSON.stringify([1, 3]));
+  const arrayResult = await run("node", ["dist/src/cli.js", "diff", beforePath, afterPath]);
+  assert.equal(arrayResult.stdout, "changed $: [1,2] -> [1,3]\n");
+  assert.equal(arrayResult.stderr, "");
+
+  await writeFile(beforePath, JSON.stringify(1));
+  await writeFile(afterPath, JSON.stringify(2));
+  const scalarResult = await run("node", ["dist/src/cli.js", "diff", beforePath, afterPath]);
+  assert.equal(scalarResult.stdout, "changed $: 1 -> 2\n");
+  assert.equal(scalarResult.stderr, "");
 });
 
 test("compiled CLI prints help", async () => {
