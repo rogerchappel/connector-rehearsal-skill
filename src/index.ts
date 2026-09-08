@@ -271,7 +271,7 @@ function secretPayloadKeys(value: unknown, prefix = ""): string[] {
 
 function flatten(value: unknown, segments: string[] = []): Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
-    return segments.length > 0 ? { [renderPath(segments)]: value } : {};
+    return { [segments.length > 0 ? renderPath(segments) : "$"]: value };
   }
   if (segments.length > 0 && Object.keys(value).length === 0) {
     return { [renderPath(segments)]: {} };
