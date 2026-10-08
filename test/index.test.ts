@@ -132,6 +132,22 @@ test("renders manifest text without allowing Markdown structure injection", () =
   assert.match(markdown, /- docs\/ordinary-proof\.md/);
 });
 
+test("ignores nested objects whose properties differ only in insertion order", () => {
+  assert.deepEqual(
+    diffObjects({ settings: { nested: { first: 1, second: ["a", { x: true, y: false }] } } },
+      { settings: { nested: { second: ["a", { y: false, x: true }], first: 1 } } }),
+    []
+  );
+});
+
+test("diffs genuinely changed nested object values", () => {
+  assert.deepEqual(
+    diffObjects({ settings: { nested: { first: 1, second: true } } },
+      { settings: { nested: { second: false, first: 1 } } }),
+    ["changed settings.nested.second: true -> false"]
+  );
+});
+
 test("diffs before and after payloads", () => {
   const changes = diffObjects({ status: "draft", owner: "a" }, { status: "approved", owner: "a", evidence: true });
   assert.deepEqual(changes, ["added evidence: true", "changed status: \"draft\" -> \"approved\""]);
