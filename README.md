@@ -120,3 +120,10 @@ checks the clean dry-run contents, creates and extracts a temporary tarball, and
 invokes its declared `connector-rehearsal` binary with `--help`. It confirms the
 CLI, fixtures, docs, changelog, README, license, and security policy ship while
 compiled tests remain excluded.
+
+## Node.js compatibility
+
+The package declares Node.js `>=20`. CI runs the full release check on Node 20,
+22, and 24; its engine check reads `package.json` and confirms each CI runtime
+meets the declared minimum, so the minimum is checked alongside the supported
+CI matrix.

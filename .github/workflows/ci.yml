@@ -25,5 +25,7 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
+      - name: Verify declared Node engine
+        run: node scripts/check-node-engine.mjs
       - name: Run release check
         run: npm run release:check
