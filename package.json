@@ -26,7 +26,7 @@
     "smoke:compiled": "node dist/src/cli.js rehearse fixtures/slack-action.json --format markdown && node dist/src/cli.js diff fixtures/before.json fixtures/after.json",
     "validate:cli": "node dist/src/cli.js plan fixtures/slack-action.json --out tmp/rehearsal && node dist/src/cli.js rehearse fixtures/github-action.json --format json",
     "package:smoke": "node scripts/package-smoke.mjs",
-    "release:check": "npm run validate",
+    "release:check": "npm run validate && npm run validate:cli",
     "validate": "bash scripts/validate.sh",
     "lint": "npm run check"
   },

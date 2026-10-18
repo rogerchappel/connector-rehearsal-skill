@@ -491,7 +491,7 @@ test("release check delegates to the complete canonical validation gate", async 
   };
   const validationScript = await readFile("scripts/validate.sh", "utf8");
 
-  assert.equal(packageJson.scripts["release:check"], "npm run validate");
+  assert.equal(packageJson.scripts["release:check"], "npm run validate && npm run validate:cli");
   for (const command of [
     "npm run check",
     "npm run build",
