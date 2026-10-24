@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/rogerchappel/connector-rehearsal-skill/blob/main/schemas/connector-action-manifest.schema.json",
+  "title": "Connector action manifest",
+  "description": "Input document accepted by connector-rehearsal-skill.",
+  "type": "object",
+  "required": ["connector", "action", "target", "payload"],
+  "properties": {
+    "connector": { "type": "string", "minLength": 1 },
+    "action": { "type": "string", "minLength": 1 },
+    "target": { "oneOf": [{ "type": "string", "minLength": 1 }, { "type": "array", "items": { "type": "string", "minLength": 1 }, "minItems": 1 }] },
+    "payload": { "type": "object" },
+    "approval_required": { "type": "boolean" },
+    "risk_level": { "type": "string", "enum": ["low", "medium", "high"] },
+    "rollback_note": { "type": "string" },
+    "evidence": { "type": "array", "items": { "type": "string" } }
+  },
+  "additionalProperties": false
+}
