@@ -1,0 +1,1 @@
+{"connector":"slack","action":"post_message","target":"#review"}

@@ -1,0 +1,1 @@
+{"connector":"slack","action":"post_message","target":"#review","payload":{"text":"Ready"},"approval_required":true,"risk_level":"medium","rollback_note":"Delete draft","evidence":["review.md"]}
