@@ -7,6 +7,7 @@
     "connector-rehearsal": "./dist/src/cli.js"
   },
   "files": [
+    "schemas",
     "dist/src",
     "fixtures",
     "docs",
@@ -51,6 +52,7 @@
   "homepage": "https://github.com/rogerchappel/connector-rehearsal-skill#readme",
   "devDependencies": {
     "@types/node": "^20.14.0",
+    "ajv": "^8.20.0",
     "typescript": "^5.4.5"
   },
   "dependencies": {
