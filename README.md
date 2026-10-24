@@ -54,8 +54,11 @@ is reported as `changed $: [1,2] -> [1,3]`.
 }
 ```
 
-Manifests may be JSON or YAML (`.yaml`/`.yml`). YAML input supports nested
-mappings and sequences, quoted scalars, booleans, numbers, and null values.
+Manifests may be JSON or YAML (`.yaml`/`.yml`). The published JSON Schema is
+[`schemas/connector-action-manifest.schema.json`](schemas/connector-action-manifest.schema.json)
+(JSON Schema 2020-12); it describes structural fields, while runtime rehearsal
+checks such as requiring a rollback note remain separate. YAML input supports
+nested mappings and sequences, quoted scalars, booleans, numbers, and null values.
 Malformed YAML and duplicate mapping keys fail with a nonzero CLI exit before
 any rehearsal is marked ready.
 
