@@ -116,7 +116,9 @@ npm run package:smoke
 ```
 
 The gate builds once, then runs the compiled test and smoke suites. `validate:cli`
-exercises plan artifact generation and a JSON rehearsal. Packaging does not
+exercises plan artifact generation in `${TMPDIR:-/tmp}/connector-rehearsal-validation`
+and a JSON rehearsal; it may replace that temporary directory, but leaves no
+repository artifacts. Packaging does not
 depend on that earlier build: npm's `prepack` hook rebuilds `dist` automatically
 for both `npm pack` and `npm pack --dry-run`. `package:smoke` removes `dist`,
 checks the clean dry-run contents, creates and extracts a temporary tarball, and
